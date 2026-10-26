@@ -1,0 +1,91 @@
+.list {
+  min-height: 200px;
+}
+
+.items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* 1行 = [日付] [カテゴリ・メモ] [金額] [ボタン] */
+.item {
+  display: grid;
+  grid-template-columns: 48px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.editing {
+  background: var(--primary-bg);
+  border-radius: 8px;
+}
+
+.date {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* 長いメモで横にはみ出さないようにする */
+}
+
+.category {
+  font-weight: 600;
+}
+
+.memo {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.iconButton {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--primary-bg);
+}
+
+.danger:hover {
+  background: var(--expense-bg);
+  color: var(--expense);
+}
+
+@media (max-width: 600px) {
+  .item {
+    grid-template-columns: 40px 1fr auto;
+  }
+  /* スマホではボタンを下の段に回す */
+  .buttons {
+    grid-column: 2 / -1;
+    justify-content: flex-end;
+  }
+}

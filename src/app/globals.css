@@ -1,0 +1,118 @@
+/* =============================================================
+   アプリ全体に適用する CSS
+   - :root に色などを「CSS 変数」として定義し、各所で var(--名前) で使う
+   - 色を変えたいときはここを変えるだけで全体に反映される
+   ============================================================= */
+
+:root {
+  --bg: #f4f6fb;
+  --surface: #ffffff;
+  --text: #1f2933;
+  --text-muted: #6b7785;
+  --border: #e3e7ee;
+  --primary: #3b6fe0;
+  --primary-bg: #eaf0fd;
+  --income: #1a9b6c;
+  --expense: #d64545;
+  --expense-bg: #fdecec;
+  --radius: 12px;
+}
+
+/* OS がダークモードのときは色だけ差し替える */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12161c;
+    --surface: #1b2129;
+    --text: #e6e9ee;
+    --text-muted: #96a0ad;
+    --border: #2c343f;
+    --primary: #6d95f0;
+    --primary-bg: #1f2b44;
+    --income: #3cc28f;
+    --expense: #f07070;
+    --expense-bg: #3a1f22;
+  }
+}
+
+/* 幅に padding と border を含める（レイアウト計算が直感的になる） */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  line-height: 1.5;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+/* ---------- 共通クラス（どのコンポーネントからも使う） ---------- */
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.page-title {
+  margin: 0 0 16px;
+  font-size: 1.6rem;
+}
+
+.section-title {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.income {
+  color: var(--income);
+}
+
+.expense {
+  color: var(--expense);
+}
+
+.button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button:hover {
+  opacity: 0.9;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}

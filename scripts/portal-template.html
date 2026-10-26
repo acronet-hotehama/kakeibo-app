@@ -1,0 +1,1182 @@
+<title>家計簿アプリ学習帳</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@600;700&display=swap">
+<style>
+/* レイアウト: 家計簿の帳簿ページ。罫線の紙面に日付の綴じ、合格した日には朱肉のはんこ */
+:root {
+  --paper: #f3f6f4;
+  --surface: #ffffff;
+  --rule: #d4e2da;
+  --rule-strong: #a9c4b6;
+  --ink: #1c2a33;
+  --ink-soft: #586a72;
+  --accent: #1e6b57;
+  --accent-soft: #e2efe9;
+  --stamp: #c4362b;
+  --stamp-soft: #fbe9e6;
+  --warn: #9a6a12;
+  --warn-soft: #fbf1dc;
+  --zone-browser: #e4ecf8;
+  --zone-server: #e6f1ea;
+  --zone-db: #f6ecdf;
+  --zone-browser-ink: #2f5590;
+  --zone-server-ink: #22694f;
+  --zone-db-ink: #8a5a1c;
+  --font-display: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+  --radius: 10px;
+  --hl-keyword: #8a3ab9;
+  --hl-string: #1d7a4f;
+  --hl-number: #b35a12;
+  --hl-comment: #7b8a85;
+  --hl-title: #2a5db0;
+  --hl-attr: #9a4f00;
+  --hl-tag: #b0362b;
+  --code-bg: #fbfcfb;
+  --line-hit: #fff3c4;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111815; --surface: #19221e; --rule: #283731; --rule-strong: #3d5248;
+    --ink: #e3ebe7; --ink-soft: #9db0a8; --accent: #62c4a6; --accent-soft: #1d3029;
+    --stamp: #f0695b; --stamp-soft: #3a1f1c; --warn: #e2b55a; --warn-soft: #34291a;
+    --zone-browser: #1c2638; --zone-server: #1a2c24; --zone-db: #2f261b;
+    --zone-browser-ink: #9dbbf0; --zone-server-ink: #8fd6b6; --zone-db-ink: #e7bd84;
+    --hl-keyword: #d19af0; --hl-string: #8fd6a8; --hl-number: #f0b27a; --hl-comment: #7f948b;
+    --hl-title: #8db4f5; --hl-attr: #e8c07a; --hl-tag: #f08a7e; --code-bg: #141b18; --line-hit: #3b3418;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111815; --surface: #19221e; --rule: #283731; --rule-strong: #3d5248;
+  --ink: #e3ebe7; --ink-soft: #9db0a8; --accent: #62c4a6; --accent-soft: #1d3029;
+  --stamp: #f0695b; --stamp-soft: #3a1f1c; --warn: #e2b55a; --warn-soft: #34291a;
+  --zone-browser: #1c2638; --zone-server: #1a2c24; --zone-db: #2f261b;
+  --zone-browser-ink: #9dbbf0; --zone-server-ink: #8fd6b6; --zone-db-ink: #e7bd84;
+  --hl-keyword: #d19af0; --hl-string: #8fd6a8; --hl-number: #f0b27a; --hl-comment: #7f948b;
+  --hl-title: #8db4f5; --hl-attr: #e8c07a; --hl-tag: #f08a7e; --code-bg: #141b18; --line-hit: #3b3418;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.75;
+  /* 帳簿の罫線 */
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, var(--rule) 31px, var(--rule) 32px);
+  background-attachment: local;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+a { color: var(--accent); }
+code { font-family: var(--font-mono); font-size: 0.88em; background: var(--accent-soft); padding: 0.05em 0.35em; border-radius: 4px; word-break: break-word; }
+strong { font-weight: 700; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.35; margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---------- ヘッダー ---------- */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--surface); border-bottom: 1px solid var(--rule-strong);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.top-inner { max-width: 1080px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding-block: 10px; }
+.brand { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; display: flex; align-items: baseline; gap: 8px; }
+.brand small { font-family: var(--font-body); font-weight: 500; font-size: 0.75rem; color: var(--ink-soft); letter-spacing: 0.06em; }
+.tabs { display: flex; gap: 2px; flex-wrap: wrap; order: 3; flex-basis: 100%; }
+.top-inner .course { margin-left: auto; }
+.tab { border: 0; background: transparent; padding: 6px 12px; border-radius: 999px; cursor: pointer; color: var(--ink-soft); font-weight: 500; }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--surface); }
+.tab:hover:not([aria-selected="true"]) { background: var(--accent-soft); color: var(--ink); }
+.course { display: flex; border: 1px solid var(--rule-strong); border-radius: 999px; overflow: hidden; }
+.course button { border: 0; background: transparent; padding: 4px 12px; cursor: pointer; font-size: 0.85rem; color: var(--ink-soft); }
+.course button[aria-pressed="true"] { background: var(--ink); color: var(--paper); font-weight: 700; }
+
+main { max-width: 1080px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 28px; }
+.view { display: flex; flex-direction: column; gap: 28px; }
+.eyebrow { font-size: 0.75rem; letter-spacing: 0.12em; color: var(--ink-soft); font-weight: 700; }
+.muted { color: var(--ink-soft); }
+.sheet { background: var(--surface); border: 1px solid var(--rule-strong); border-radius: var(--radius); padding: 22px; min-width: 0; }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.section-head h2 { font-size: 1.35rem; }
+.note { font-size: 0.85rem; padding: 10px 14px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--rule-strong); background: var(--surface); border-radius: 999px; padding: 4px 12px; cursor: pointer; font-size: 0.88rem; }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--surface); border-radius: 8px; padding: 8px 16px; font-weight: 700; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ---------- はんこ ---------- */
+.hanko {
+  --size: 54px;
+  width: var(--size); height: var(--size); border-radius: 50%;
+  border: 2.5px solid var(--stamp); color: var(--stamp);
+  display: inline-grid; place-items: center; transform: rotate(-12deg);
+  font-family: var(--font-display); font-weight: 700; font-size: calc(var(--size) * 0.3); line-height: 1;
+  box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 3.5px var(--stamp);
+  background: var(--stamp-soft);
+  flex: none;
+}
+.hanko.small { --size: 34px; border-width: 2px; box-shadow: none; }
+.hanko.stamp-in { animation: stamp 0.35s ease-out; }
+@keyframes stamp { from { transform: rotate(-12deg) scale(1.6); opacity: 0; } to { transform: rotate(-12deg) scale(1); opacity: 1; } }
+
+/* ---------- 今日 ---------- */
+.today { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; }
+.today-card { display: flex; flex-direction: column; gap: 16px; }
+.today-date { display: flex; align-items: center; gap: 16px; }
+.datebox { border: 1.5px solid var(--ink); border-radius: 8px; text-align: center; padding: 4px 10px; min-width: 70px; }
+.datebox .m { font-size: 0.75rem; color: var(--ink-soft); }
+.datebox .d { font-family: var(--font-mono); font-size: 1.7rem; font-weight: 500; line-height: 1.1; }
+.today-card h1 { font-size: clamp(1.4rem, 3.4vw, 1.9rem); }
+.kv { display: grid; grid-template-columns: 6.5em 1fr; gap: 6px 14px; }
+.kv dt { color: var(--ink-soft); font-size: 0.85rem; font-weight: 700; padding-top: 2px; }
+.kv dd { margin: 0; min-width: 0; }
+.timebar { display: flex; height: 34px; border-radius: 6px; overflow: hidden; font-size: 0.75rem; font-weight: 700; }
+.timebar div { display: grid; place-items: center; color: var(--ink); padding-inline: 4px; text-align: center; line-height: 1.2; }
+.timebar-legend { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; font-size: 0.72rem; color: var(--ink-soft); font-family: var(--font-mono); }
+
+.stats { display: flex; flex-direction: column; gap: 18px; }
+.meter { display: flex; flex-direction: column; gap: 6px; }
+.meter-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 0.9rem; }
+.meter-top b { font-family: var(--font-mono); font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.track { height: 8px; background: var(--rule); border-radius: 4px; overflow: hidden; }
+.track > div { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s ease; }
+
+.stampgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.cell { border: 1px solid var(--rule-strong); border-radius: 8px; background: var(--surface); min-height: 92px; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; position: relative; cursor: pointer; text-align: left; }
+.cell .cid { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-soft); }
+.cell .cdate { font-weight: 700; font-size: 0.9rem; }
+.cell .cunit { font-size: 0.72rem; color: var(--ink-soft); line-height: 1.3; }
+.cell .hanko { position: absolute; right: 6px; bottom: 6px; }
+.cell.is-today { border: 2px solid var(--accent); }
+.cell.is-fail { background: var(--warn-soft); }
+.cell .fail { position: absolute; right: 8px; bottom: 6px; font-size: 0.7rem; color: var(--warn); font-weight: 700; }
+
+/* ---------- 日程 ---------- */
+.week { display: flex; flex-direction: column; gap: 8px; }
+.week h3 { font-family: var(--font-body); font-size: 0.85rem; letter-spacing: 0.08em; color: var(--ink-soft); }
+details.day { background: var(--surface); border: 1px solid var(--rule-strong); border-radius: var(--radius); }
+details.day[open] { border-color: var(--accent); }
+details.day summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 3.4em 6.2em 1fr auto; gap: 12px; align-items: center; padding: 12px 16px; }
+details.day summary::-webkit-details-marker { display: none; }
+.sid { font-family: var(--font-mono); color: var(--ink-soft); font-size: 0.85rem; }
+.sdate { font-weight: 700; }
+.sunit { min-width: 0; }
+.tag { font-size: 0.72rem; border-radius: 999px; padding: 2px 10px; background: var(--accent-soft); color: var(--accent); font-weight: 700; white-space: nowrap; }
+.tag.test { background: var(--stamp-soft); color: var(--stamp); }
+.day-body { padding: 4px 16px 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; border-top: 1px dashed var(--rule-strong); }
+.day-body > div { min-width: 0; padding-top: 12px; }
+.day-body h4 { margin: 0 0 4px; font-size: 0.78rem; letter-spacing: 0.08em; color: var(--ink-soft); }
+.rules { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.rules ol { margin: 8px 0 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 4px; }
+
+/* ---------- 単元 ---------- */
+.zones { display: grid; grid-template-columns: 1.2fr 1.2fr 0.8fr; gap: 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--rule-strong); }
+.zone { padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; transition: opacity 0.25s; }
+.zone h3 { font-family: var(--font-body); font-size: 0.85rem; letter-spacing: 0.06em; }
+.zone.browser { background: var(--zone-browser); color: var(--zone-browser-ink); }
+.zone.server { background: var(--zone-server); color: var(--zone-server-ink); }
+.zone.db { background: var(--zone-db); color: var(--zone-db-ink); }
+.zone.dim { opacity: 0.35; }
+.zone .files { display: flex; flex-wrap: wrap; gap: 4px; }
+.zone .files code { background: var(--surface); color: var(--ink); }
+.zone .files code.hot { outline: 2px solid currentColor; }
+.zone .runs { font-size: 0.75rem; color: var(--ink-soft); }
+.concepts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.concept { border: 1px solid var(--rule-strong); border-radius: var(--radius); padding: 16px; background: var(--surface); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.concept h3 { font-size: 1.05rem; }
+.concept pre { margin: 0; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px; overflow-x: auto; white-space: pre; }
+.concept .where { font-size: 0.72rem; color: var(--ink-soft); font-family: var(--font-mono); }
+.unit-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.lanes { overflow-x: auto; }
+.lane-grid { display: grid; grid-template-columns: 2.2em repeat(3, minmax(150px, 1fr)); min-width: 560px; }
+.lane-head { font-size: 0.78rem; font-weight: 700; padding: 8px; text-align: center; letter-spacing: 0.06em; }
+.lane-head.browser { background: var(--zone-browser); color: var(--zone-browser-ink); }
+.lane-head.server { background: var(--zone-server); color: var(--zone-server-ink); }
+.lane-head.db { background: var(--zone-db); color: var(--zone-db-ink); }
+.lane-n { font-family: var(--font-mono); color: var(--ink-soft); font-size: 0.8rem; padding: 10px 0; text-align: center; border-top: 1px solid var(--rule); }
+.lane-c { border-top: 1px solid var(--rule); border-left: 1px dashed var(--rule-strong); padding: 8px; min-width: 0; }
+.step { border-radius: 8px; padding: 8px 10px; font-size: 0.84rem; line-height: 1.5; border: 1px solid var(--rule-strong); background: var(--surface); }
+.step .file { display: block; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-soft); }
+.step.browser { border-left: 4px solid var(--zone-browser-ink); }
+.step.server { border-left: 4px solid var(--zone-server-ink); }
+.step.db { border-left: 4px solid var(--zone-db-ink); }
+
+/* ---------- テスト ---------- */
+.qlist { display: flex; flex-direction: column; gap: 14px; counter-reset: q; }
+.q { border: 1px solid var(--rule-strong); border-radius: var(--radius); background: var(--surface); padding: 16px 18px; display: grid; grid-template-columns: 2.2em 1fr; gap: 4px 12px; }
+.q .qn { font-family: var(--font-mono); font-size: 1.1rem; color: var(--ink-soft); }
+.q .qt { min-width: 0; }
+.q .hands { display: inline-block; font-size: 0.7rem; font-weight: 700; color: var(--warn); background: var(--warn-soft); border-radius: 4px; padding: 0 6px; margin-right: 6px; }
+.q textarea { grid-column: 2; width: 100%; min-height: 3.2em; resize: vertical; border: 1px solid var(--rule-strong); border-radius: 6px; padding: 8px 10px; background: var(--paper); }
+.ans { grid-column: 2; border-top: 1px dashed var(--rule-strong); margin-top: 8px; padding-top: 10px; display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: start; }
+.ans dl { margin: 0; display: grid; grid-template-columns: 5.5em 1fr; gap: 4px 10px; font-size: 0.9rem; min-width: 0; }
+.ans dt { color: var(--ink-soft); font-weight: 700; font-size: 0.8rem; padding-top: 2px; }
+.ans dd { margin: 0; min-width: 0; }
+.mark { display: flex; gap: 6px; }
+.mark button { width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--rule-strong); background: var(--surface); font-size: 1.1rem; cursor: pointer; font-weight: 700; }
+.mark button.ok[aria-pressed="true"] { border-color: var(--stamp); color: var(--stamp); background: var(--stamp-soft); }
+.mark button.ng[aria-pressed="true"] { border-color: var(--ink-soft); background: var(--rule); }
+.scorebar { position: sticky; bottom: env(safe-area-inset-bottom, 0px); background: var(--surface); border: 1px solid var(--rule-strong); border-radius: var(--radius); padding: 12px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; box-shadow: 0 -6px 18px -12px var(--ink); }
+.score { font-family: var(--font-mono); font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.history { font-size: 0.85rem; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+
+/* ---------- 記録 ---------- */
+.tablewrap { overflow-x: auto; }
+table.rec { width: 100%; border-collapse: collapse; min-width: 720px; font-variant-numeric: tabular-nums; }
+.rec th, .rec td { border-bottom: 1px solid var(--rule); padding: 8px 6px; text-align: left; vertical-align: middle; }
+.rec th { font-size: 0.75rem; color: var(--ink-soft); letter-spacing: 0.06em; border-bottom: 1.5px solid var(--rule-strong); }
+.rec td.num, .rec th.num { text-align: right; font-family: var(--font-mono); }
+.rec input[type="number"] { width: 5.5em; text-align: right; border: 1px solid var(--rule-strong); border-radius: 6px; padding: 4px 6px; background: var(--paper); font-family: var(--font-mono); }
+.rec input[type="text"] { width: 100%; min-width: 10em; border: 1px solid var(--rule); border-radius: 6px; padding: 4px 6px; background: var(--paper); }
+.rec input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); }
+.rec tfoot td { font-weight: 700; border-top: 1.5px solid var(--rule-strong); border-bottom: 0; }
+.judge-x { color: var(--warn); font-weight: 700; font-size: 0.85rem; }
+.goals { display: flex; flex-direction: column; gap: 0; }
+.goal { display: grid; grid-template-columns: 2em 1fr auto 3.2em; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.goal:last-child { border-bottom: 0; }
+.goal .gn { font-family: var(--font-mono); color: var(--ink-soft); }
+.goal .gv { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.goal input[type="number"] { width: 4.5em; text-align: right; border: 1px solid var(--rule-strong); border-radius: 6px; padding: 3px 6px; background: var(--paper); }
+.goal input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); }
+.goal .pending { width: 34px; height: 34px; border-radius: 50%; border: 1.5px dashed var(--rule-strong); }
+.saved { font-size: 0.78rem; color: var(--ink-soft); }
+
+/* ---------- コード ---------- */
+.codewrap { display: grid; grid-template-columns: 280px 1fr; gap: 18px; align-items: start; }
+.filenav { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 110px); max-height: calc(100vh - 130px); overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 14px; }
+.filenav input[type="search"] { width: 100%; border: 1px solid var(--rule-strong); border-radius: 8px; padding: 7px 10px; background: var(--paper); }
+.fgroup h3 { font-family: var(--font-body); font-size: 0.72rem; letter-spacing: 0.08em; color: var(--ink-soft); margin: 0 0 4px; }
+.fgroup ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.fbtn { width: 100%; text-align: left; border: 0; background: transparent; padding: 4px 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink); }
+.fbtn:hover { background: var(--accent-soft); }
+.fbtn[aria-current="true"] { background: var(--accent); color: var(--surface); }
+.fbtn .hits { margin-left: auto; font-size: 0.7rem; color: var(--stamp); font-weight: 700; }
+.fbtn[aria-current="true"] .hits { color: var(--surface); }
+.zdot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.zdot.browser { background: var(--zone-browser-ink); } .zdot.server { background: var(--zone-server-ink); }
+.zdot.db { background: var(--zone-db-ink); } .zdot.both { background: var(--accent); } .zdot.config { background: var(--ink-soft); }
+.zone-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.72rem; color: var(--ink-soft); }
+.zone-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.fileview { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.filehead { display: flex; flex-direction: column; gap: 8px; }
+.filehead .fpath { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 500; word-break: break-all; }
+.zbadge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+.zbadge.browser { background: var(--zone-browser); color: var(--zone-browser-ink); }
+.zbadge.server { background: var(--zone-server); color: var(--zone-server-ink); }
+.zbadge.db { background: var(--zone-db); color: var(--zone-db-ink); }
+.zbadge.both { background: var(--accent-soft); color: var(--accent); }
+.zbadge.config { background: var(--rule); color: var(--ink-soft); }
+.rel { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.82rem; }
+.rel b { color: var(--ink-soft); font-size: 0.75rem; letter-spacing: 0.06em; margin-right: 2px; }
+.rel button { border: 1px solid var(--rule-strong); background: var(--surface); border-radius: 999px; padding: 1px 10px; font-family: var(--font-mono); font-size: 0.75rem; cursor: pointer; }
+.rel button:hover { border-color: var(--accent); color: var(--accent); }
+.codebox { border: 1px solid var(--rule-strong); border-radius: var(--radius); background: var(--code-bg); overflow: hidden; }
+.codebar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 10px 6px 14px; border-bottom: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-soft); flex-wrap: wrap; }
+.codebar .hitlist { display: flex; flex-wrap: wrap; gap: 4px; }
+.codebar .hitlist button { border: 0; background: var(--line-hit); border-radius: 4px; padding: 0 6px; font-family: var(--font-mono); font-size: 0.72rem; cursor: pointer; color: var(--ink); }
+.codegrid { display: grid; grid-template-columns: auto 1fr; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; }
+.gutter { margin: 0; padding: 12px 10px 12px 12px; text-align: right; color: var(--ink-soft); user-select: none; border-right: 1px solid var(--rule); background: var(--surface); }
+.gutter span { display: block; }
+.gutter span.hit { background: var(--line-hit); color: var(--ink); font-weight: 700; border-radius: 3px; }
+.codegrid pre.src { margin: 0; padding: 12px 16px; white-space: pre; tab-size: 2; color: var(--ink); background: transparent; }
+.codegrid pre.src code { background: none; padding: 0; font-size: inherit; word-break: normal; }
+.hljs-keyword, .hljs-built_in, .hljs-literal, .hljs-meta .hljs-keyword { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-symbol { color: var(--hl-number); }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-title, .hljs-title.function_, .hljs-title.class_, .hljs-type { color: var(--hl-title); }
+.hljs-attr, .hljs-attribute, .hljs-property, .hljs-params, .hljs-variable { color: var(--hl-attr); }
+.hljs-tag, .hljs-name, .hljs-selector-class, .hljs-selector-tag, .hljs-selector-id, .hljs-selector-pseudo { color: var(--hl-tag); }
+.fgroup h3 .snum { font-family: var(--font-mono); color: var(--accent); margin-right: 4px; }
+.fgroup h3 button { all: unset; cursor: pointer; }
+.fgroup h3 button:hover { color: var(--accent); }
+.fgroup h3 button[aria-current="true"] { color: var(--accent); text-decoration: underline; }
+.stepcard { display: flex; flex-direction: column; gap: 10px; border-left: 4px solid var(--accent); }
+.stepcard .stitle { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.stepcard .stitle h3 { font-size: 1.25rem; }
+.stepcard .snum { font-family: var(--font-mono); font-weight: 500; color: var(--accent); letter-spacing: 0.06em; font-size: 0.85rem; }
+.stepcard dl { margin: 0; display: grid; grid-template-columns: 5.5em 1fr; gap: 6px 12px; font-size: 0.92rem; }
+.stepcard dt { color: var(--ink-soft); font-weight: 700; font-size: 0.8rem; padding-top: 2px; }
+.stepcard dd { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.cmd { font-family: var(--font-mono); font-size: 0.82rem; background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 4px 10px; overflow-x: auto; white-space: nowrap; }
+.stepfiles { display: flex; flex-wrap: wrap; gap: 6px; }
+.modes { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 999px; overflow: hidden; }
+.modes button { border: 0; background: transparent; padding: 3px 14px; cursor: pointer; font-size: 0.82rem; color: var(--ink-soft); }
+.modes button[aria-pressed="true"] { background: var(--ink); color: var(--paper); font-weight: 700; }
+.intro { margin: 0; padding: 14px 16px; background: var(--accent-soft); border-radius: var(--radius); line-height: 1.8; }
+.blocks { display: flex; flex-direction: column; gap: 14px; }
+.blk { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); border: 1px solid var(--rule-strong); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.blk .codegrid { background: var(--code-bg); border-right: 1px solid var(--rule); }
+.blk .exp { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.blk .exp .lines { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-soft); }
+.blk .exp h4 { margin: 0; font-family: var(--font-display); font-size: 1.02rem; line-height: 1.45; }
+.blk .exp p { margin: 0; line-height: 1.85; font-size: 0.92rem; }
+.pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pager button { text-align: left; border: 1px solid var(--rule-strong); background: var(--surface); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pager button.next { text-align: right; grid-column: 2; }
+.pager button:hover { border-color: var(--accent); }
+.pager small { color: var(--ink-soft); font-size: 0.75rem; }
+.pager b { font-family: var(--font-mono); font-weight: 500; font-size: 0.85rem; overflow-wrap: anywhere; }
+.progress { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-soft); }
+@media (max-width: 820px) {
+  .blk { grid-template-columns: 1fr; }
+  .blk .exp { order: -1; border-bottom: 1px solid var(--rule); }
+  .blk .codegrid { border-right: 0; }
+}
+code.filelink { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+code.filelink:hover { color: var(--accent); }
+.filepick { display: none; width: 100%; border: 1px solid var(--rule-strong); border-radius: 8px; padding: 8px; background: var(--surface); font-family: var(--font-mono); font-size: 0.85rem; }
+
+@media (max-width: 820px) {
+  .codewrap { grid-template-columns: 1fr; }
+  .filenav { position: static; max-height: none; }
+  .filenav .fgroup { display: none; }
+  .filepick { display: block; }
+  .today, .rules, .unit-meta { grid-template-columns: 1fr; }
+  .day-body { grid-template-columns: 1fr; }
+  .concepts { grid-template-columns: 1fr; }
+  .zones { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  details.day summary { grid-template-columns: 3em 1fr auto; }
+  details.day summary .sunit { grid-column: 1 / -1; grid-row: 2; }
+  .ans { grid-template-columns: 1fr; }
+  .q { grid-template-columns: 1.6em 1fr; }
+}
+</style>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">家計簿アプリ学習帳 <small>平日1日3時間</small></div>
+    <nav class="tabs" role="tablist" aria-label="ページ切り替え">
+      <button class="tab" role="tab" data-view="today" id="tab-today">今日</button>
+      <button class="tab" role="tab" data-view="plan" id="tab-plan">日程</button>
+      <button class="tab" role="tab" data-view="units" id="tab-units">単元</button>
+      <button class="tab" role="tab" data-view="code" id="tab-code">コード</button>
+      <button class="tab" role="tab" data-view="tests" id="tab-tests">テスト</button>
+      <button class="tab" role="tab" data-view="record" id="tab-record">記録</button>
+    </nav>
+    <div class="course" role="group" aria-label="コースの切り替え">
+      <button data-course="A" id="course-a">A 10月末</button>
+      <button data-course="B" id="course-b">B 11月末</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <p class="note" id="readonly-note" hidden>このページは閲覧のみです。記録を保存するには、編集権限が必要です。</p>
+
+  <!-- ================= 今日 ================= -->
+  <section class="view" id="view-today">
+    <div class="today">
+      <article class="sheet today-card" id="today-card"></article>
+      <aside class="sheet stats" id="today-stats"></aside>
+    </div>
+    <div class="sheet" style="display:flex;flex-direction:column;gap:14px">
+      <div class="section-head">
+        <h2>はんこ帳</h2>
+        <span class="muted" style="font-size:0.85rem">時間・成果物・テストがそろった日に「合格」のはんこが押されます</span>
+      </div>
+      <div class="stampgrid" id="stampgrid"></div>
+    </div>
+  </section>
+
+  <!-- ================= 日程 ================= -->
+  <section class="view" id="view-plan" hidden>
+    <div class="section-head">
+      <h2 id="plan-title">日程</h2>
+      <span class="muted" id="plan-sub"></span>
+    </div>
+    <div id="plan-weeks" style="display:flex;flex-direction:column;gap:22px"></div>
+    <div class="rules">
+      <div class="sheet">
+        <h2 style="font-size:1.1rem">フローチャート採点チェックリスト</h2>
+        <p class="muted" style="margin:4px 0 0;font-size:0.85rem">10項目のうち9項目以上で合格</p>
+        <ol id="flow-checklist"></ol>
+      </div>
+      <div class="sheet">
+        <h2 style="font-size:1.1rem">改修課題の合格条件</h2>
+        <p class="muted" style="margin:4px 0 0;font-size:0.85rem">Bコース後半。5項目すべてで合格</p>
+        <ol id="kaishu-conditions"></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 単元 ================= -->
+  <section class="view" id="view-units" hidden>
+    <div class="section-head">
+      <h2>コードはどこで動いている？</h2>
+      <span class="muted" style="font-size:0.85rem">単元を選ぶと、関係する場所とファイルが強調されます</span>
+    </div>
+    <div class="chips" id="unit-chips"></div>
+    <div class="zones" id="zones"></div>
+    <div id="unit-detail" style="display:flex;flex-direction:column;gap:18px"></div>
+
+    <div class="sheet" style="display:flex;flex-direction:column;gap:14px">
+      <div class="section-head">
+        <h2>処理の流れを追う</h2>
+        <div class="chips" id="flow-chips"></div>
+      </div>
+      <p class="muted" style="margin:0;font-size:0.88rem" id="flow-desc"></p>
+      <div class="lanes"><div class="lane-grid" id="lane-grid"></div></div>
+    </div>
+  </section>
+
+  <!-- ================= コード ================= -->
+  <section class="view" id="view-code" hidden>
+    <div class="section-head">
+      <h2>作る順番でコードを読む</h2>
+      <span class="muted" style="font-size:0.85rem" id="code-sub"></span>
+    </div>
+    <div class="codewrap">
+      <nav class="sheet filenav" aria-label="作る手順とファイル">
+        <input type="search" id="code-search" placeholder="コードを検索（例：useState、SELECT）" aria-label="コードを検索">
+        <select class="filepick" id="file-pick" aria-label="ファイルを選ぶ"></select>
+        <div class="zone-legend" id="zone-legend"></div>
+        <div id="file-groups" style="display:flex;flex-direction:column;gap:12px"></div>
+      </nav>
+      <article class="fileview" id="fileview"></article>
+    </div>
+  </section>
+
+  <!-- ================= テスト ================= -->
+  <section class="view" id="view-tests" hidden>
+    <div class="section-head">
+      <h2 id="test-title">確認テスト</h2>
+      <span class="muted" style="font-size:0.85rem">答えを書いてから「採点する」を押すと、解答と採点基準が表示されます</span>
+    </div>
+    <div class="chips" id="test-chips"></div>
+    <div class="history" id="test-history"></div>
+    <div class="qlist" id="qlist"></div>
+    <div class="scorebar" id="scorebar"></div>
+  </section>
+
+  <!-- ================= 記録 ================= -->
+  <section class="view" id="view-record" hidden>
+    <div class="section-head">
+      <h2 id="record-title">学習記録</h2>
+      <span class="saved" id="saved-state"></span>
+    </div>
+    <div class="sheet" style="padding:8px 14px">
+      <div class="tablewrap"><table class="rec" id="rec-table"></table></div>
+    </div>
+    <div class="sheet" style="display:flex;flex-direction:column;gap:6px">
+      <div class="section-head">
+        <h2 id="goal-title">最終判定</h2>
+        <span class="muted" style="font-size:0.85rem" id="goal-sub"></span>
+      </div>
+      <div class="goals" id="goals"></div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+const DATA = __PORTAL_DATA__;
+const YEAR = 2026;
+const PASS_MIN = 150;
+const TIME_SPLIT = [
+  { label: "インプット", min: 60, color: "var(--zone-browser)" },
+  { label: "コードを読む・動かす", min: 75, color: "var(--zone-server)" },
+  { label: "成果物", min: 30, color: "var(--zone-db)" },
+  { label: "テスト・記録", min: 15, color: "var(--stamp-soft)" },
+];
+
+// ------------------------------------------------------------
+// 単元の図解（どこで動くか・キーワード・実際のコード）
+// ------------------------------------------------------------
+const ZONES = [
+  { id: "browser", name: "ブラウザ", runs: "あなたの PC の Chrome / Edge",
+    files: ["components/Dashboard.tsx", "components/TransactionForm.tsx", "components/TransactionList.tsx", "components/SummaryCards.tsx", "components/MonthSelector.tsx", "components/CategoryChart.tsx", "lib/api-client.ts", "lib/format.ts", "globals.css", "*.module.css"] },
+  { id: "server", name: "Node.js サーバー（Next.js）", runs: "npm run dev で起動したもの",
+    files: ["app/page.tsx", "app/layout.tsx", "app/api/transactions/route.ts", "app/api/transactions/[id]/route.ts", "app/api/summary/route.ts", "lib/validation.ts", "lib/repository.ts", "lib/db.ts", "lib/types.ts", "scripts/db-setup.mjs"] },
+  { id: "db", name: "PostgreSQL", runs: "Windows のサービスとして常駐",
+    files: ["db/schema.sql", "db/seed.sql", "categories", "transactions"] },
+];
+
+const UNITS = {
+  M1: { zones: ["browser", "server", "db"], hot: ["app/api/transactions/route.ts", "components/Dashboard.tsx", "db/schema.sql"],
+    concepts: [
+      { t: "3つの場所", d: "画面（ブラウザ）、処理（サーバー）、保存（DB）。ブラウザは DB に直接つながらず、必ずサーバーの API を通ります。", code: "ブラウザ ──HTTP──▶ サーバー ──SQL──▶ PostgreSQL", where: "docs/01_全体像.md" },
+      { t: "HTTP メソッド", d: "「何をしたいか」を表す動詞。取得は GET、登録は POST、更新は PUT、削除は DELETE。", code: "GET    /api/transactions?month=2026-10\nPOST   /api/transactions\nPUT    /api/transactions/5\nDELETE /api/transactions/5", where: "開発者ツール > Network" },
+      { t: "ステータスコード", d: "結果を表す3桁の数字。2xx は成功、4xx は送った側の誤り、5xx はサーバー側の問題。", code: "200 OK          取得・更新に成功\n201 Created     登録に成功\n204 No Content  削除に成功\n400 Bad Request 入力が正しくない\n404 Not Found   対象がない", where: "docs/02_処理の流れ.md" },
+      { t: "npm run と package.json", d: "npm run の後ろの名前は、package.json の scripts に書かれたコマンドの別名です。", code: "\"scripts\": {\n  \"dev\": \"next dev\",\n  \"db:setup\": \"node scripts/db-setup.mjs\"\n}", where: "package.json" },
+    ] },
+  M2: { zones: ["browser"], hot: ["globals.css", "*.module.css", "components/TransactionForm.tsx"],
+    concepts: [
+      { t: "JSX と className", d: "React では HTML とほぼ同じ書き方で画面を作ります。class だけは className と書きます。", code: "<form className={`card ${styles.form}`}>\n  <label className={styles.field}>\n    金額（円）\n    <input type=\"number\" min={1} />\n  </label>\n</form>", where: "components/TransactionForm.tsx" },
+      { t: "CSS 変数", d: ":root に色を名前つきで定義し、var(--名前) で使います。ここを変えると全体の色が変わります。", code: ":root {\n  --income: #1a9b6c;\n  --expense: #d64545;\n}\n.expense { color: var(--expense); }", where: "app/globals.css" },
+      { t: "CSS Modules", d: "○○.module.css のクラス名は、そのコンポーネントの中だけで効きます。styles.名前 で使います。", code: "import styles from \"./Dashboard.module.css\";\n\n<div className={styles.columns}>", where: "components/Dashboard.tsx" },
+      { t: "メディアクエリ", d: "画面幅に応じてレイアウトを変えます。860px 以下では2列から1列になります。", code: "@media (max-width: 860px) {\n  .columns {\n    grid-template-columns: 1fr;\n  }\n}", where: "components/Dashboard.module.css" },
+    ] },
+  M3: { zones: ["browser", "server"], hot: ["lib/format.ts", "lib/api-client.ts", "scripts/db-setup.mjs"],
+    concepts: [
+      { t: "関数", d: "入力（引数）を受け取り、結果を return で返す処理のまとまり。", code: "export function formatMonthLabel(month) {\n  const [year, mon] = month.split(\"-\");\n  return `${year}年${Number(mon)}月`;\n}\n// \"2026-03\" → \"2026年3月\"", where: "lib/format.ts" },
+      { t: "配列の filter と reduce", d: "filter は条件に合うものだけを残し、reduce は全体を1つの値（合計など）にまとめます。", code: "const income = byCategory\n  .filter((r) => r.type === \"income\")\n  .reduce((sum, r) => sum + r.total, 0);", where: "lib/repository.ts" },
+      { t: "?. と ??", d: "?. は「null なら止まる」、?? は「null なら右側の値を使う」。読み込み前の画面で使います。", code: "const income = summary?.income ?? 0;\n// summary が null → 0", where: "components/SummaryCards.tsx" },
+      { t: "async / await と Promise.all", d: "通信のように時間がかかる処理を待つ書き方。Promise.all は複数の通信を同時に待ちます。", code: "Promise.all([\n  api.fetchTransactions(month),\n  api.fetchSummary(month),\n]).then(([txs, sum]) => { ... });", where: "components/Dashboard.tsx" },
+    ] },
+  M4: { zones: ["browser", "server"], hot: ["lib/types.ts", "lib/validation.ts"],
+    concepts: [
+      { t: "type（型の定義）", d: "データの形に名前をつけます。間違った形のデータを入れると、実行する前にエラーで教えてくれます。", code: "export type Category = {\n  id: number;\n  name: string;\n  type: TransactionType;\n};", where: "lib/types.ts" },
+      { t: "ユニオン型", d: "「このどれか」を表す型。決められた値以外を入れるとエラーになります。", code: "type TransactionType = \"income\" | \"expense\";\n\nconst t: TransactionType = \"salary\"; // エラー", where: "lib/types.ts" },
+      { t: "unknown と絞り込み", d: "中身が分からない値は unknown で受け、チェックしてから使います。if の後は型が確定します。", code: "if (typeof amount !== \"number\") {\n  return { ok: false, error: \"...\" };\n}\n// ここから下では amount は number", where: "lib/validation.ts" },
+      { t: "Promise<型>", d: "「あとで○○が手に入る」という意味の型。DB や API の関数の戻り値に使われます。", code: "export async function findAllCategories()\n  : Promise<Category[]> { ... }", where: "lib/repository.ts" },
+    ] },
+  M5: { zones: ["server", "db"], hot: ["db/schema.sql", "lib/repository.ts", "categories", "transactions"],
+    concepts: [
+      { t: "テーブルと外部キー", d: "取引はカテゴリの id を持ちます（1対多）。存在しないカテゴリの id は DB が拒否します。", code: "category_id INTEGER NOT NULL\n  REFERENCES categories(id)", where: "db/schema.sql" },
+      { t: "JOIN", d: "2つのテーブルを、共通の列でつなげて1つの表として取り出します。", code: "SELECT t.amount, c.name\n  FROM transactions t\n  JOIN categories c\n    ON c.id = t.category_id;", where: "lib/repository.ts" },
+      { t: "GROUP BY と SUM", d: "カテゴリごとにまとめて合計します。支出グラフの数字はここから来ています。", code: "SELECT c.name, SUM(t.amount)\n  FROM transactions t\n  JOIN categories c ON ...\n GROUP BY c.id, c.name;", where: "lib/repository.ts" },
+      { t: "プレースホルダ $1", d: "値は SQL の文字列に直接つなげず、別に渡します。SQL インジェクションを防ぐ実務の基本です。", code: "pool.query(\n  \"DELETE FROM transactions WHERE id = $1\",\n  [id],\n);", where: "lib/repository.ts" },
+    ] },
+  M6: { zones: ["server"], hot: ["app/api/transactions/route.ts", "app/api/transactions/[id]/route.ts", "lib/validation.ts", "lib/repository.ts", "app/page.tsx"],
+    concepts: [
+      { t: "フォルダ ＝ URL", d: "app/ の下のフォルダ構成が、そのまま URL になります。[id] は URL の中で変わる部分です。", code: "app/api/transactions/route.ts\n  → /api/transactions\napp/api/transactions/[id]/route.ts\n  → /api/transactions/5", where: "src/app/" },
+      { t: "GET / POST 関数", d: "route.ts に HTTP メソッドと同じ名前の関数を書くと、それが API になります。", code: "export async function POST(request) {\n  const body = await request.json();\n  ...\n  return NextResponse.json(created, { status: 201 });\n}", where: "app/api/transactions/route.ts" },
+      { t: "レイヤー（層）", d: "役割ごとにファイルを分けています。直したい内容から、見るべきファイルが決まります。", code: "route.ts       HTTP の受け取り・返却\nvalidation.ts  入力チェック\nrepository.ts  SQL の実行\ndb.ts          DB 接続", where: "docs/01_全体像.md" },
+      { t: "サーバーコンポーネント", d: "\"use client\" の無いページはサーバーで動くので、API を通さずに DB を直接読めます。", code: "export default async function HomePage() {\n  const categories = await findAllCategories();\n  return <Dashboard categories={categories} />;\n}", where: "app/page.tsx" },
+    ] },
+  M7: { zones: ["browser"], hot: ["components/Dashboard.tsx", "components/TransactionForm.tsx", "components/TransactionList.tsx"],
+    concepts: [
+      { t: "コンポーネントと props", d: "画面を部品に分け、親から子へは props でデータと関数を渡します。", code: "<TransactionList\n  transactions={transactions}\n  onDelete={handleDelete}\n/>", where: "components/Dashboard.tsx" },
+      { t: "useState", d: "変化するデータを持つ箱。セッター関数で値を変えると、画面が自動で描き直されます。", code: "const [month, setMonth] = useState(currentMonth());\n\nsetMonth(\"2026-09\"); // → 再描画", where: "components/Dashboard.tsx" },
+      { t: "useEffect", d: "依存配列の値が変わったときに処理を実行します。月が変わったら API から取り直します。", code: "useEffect(() => {\n  // 一覧と集計を取得\n}, [month, reloadKey]);", where: "components/Dashboard.tsx" },
+      { t: "key", d: "React が要素を見分けるための目印。key が変わると、その部品は作り直されます。", code: "<TransactionForm\n  key={editing?.id ?? \"new\"}\n  ...\n/>", where: "components/Dashboard.tsx" },
+    ] },
+};
+
+const FLOWS = {
+  add: { name: "取引を追加", desc: "「追加する」ボタンを押してから、一覧とグラフが新しくなるまで。",
+    steps: [
+      ["browser", "入力して「追加する」を押す → handleSubmit が動く", "TransactionForm.tsx"],
+      ["browser", "金額・カテゴリをチェック（NG ならエラー表示して終了）", "TransactionForm.tsx"],
+      ["browser", "親から受け取った onSubmit を呼ぶ", "Dashboard.tsx handleSubmit"],
+      ["browser", "fetch で POST /api/transactions に JSON を送る", "api-client.ts"],
+      ["server", "POST 関数が受け取り、validateTransactionInput で再チェック（NG なら 400）", "api/transactions/route.ts"],
+      ["server", "createTransaction を呼ぶ", "repository.ts"],
+      ["db", "INSERT INTO transactions ... RETURNING id", "transactions テーブル"],
+      ["server", "201 と登録した取引を JSON で返す", "api/transactions/route.ts"],
+      ["browser", "setReloadKey(k + 1) → useEffect が再実行", "Dashboard.tsx"],
+      ["server", "GET 一覧・GET 集計を処理（SELECT / SUM）", "route.ts → repository.ts"],
+      ["browser", "setTransactions / setSummary → 画面が再描画", "Dashboard.tsx"],
+    ] },
+  del: { name: "取引を削除", desc: "一覧の「削除」を押してから、行が消えるまで。",
+    steps: [
+      ["browser", "「削除」を押す → onDelete(t) で親に知らせる", "TransactionList.tsx"],
+      ["browser", "window.confirm で確認（キャンセルなら終了）", "Dashboard.tsx handleDelete"],
+      ["browser", "fetch で DELETE /api/transactions/5", "api-client.ts"],
+      ["server", "DELETE 関数が id を取り出す（数字でなければ 400）", "api/transactions/[id]/route.ts"],
+      ["server", "deleteTransaction を呼ぶ", "repository.ts"],
+      ["db", "DELETE FROM transactions WHERE id = $1", "transactions テーブル"],
+      ["server", "消せたら 204、見つからなければ 404 を返す", "api/transactions/[id]/route.ts"],
+      ["browser", "setReloadKey(k + 1) → 一覧と集計を取り直す", "Dashboard.tsx"],
+    ] },
+  month: { name: "月を切り替え", desc: "◀ ▶ を押してから、その月のデータが表示されるまで。",
+    steps: [
+      ["browser", "◀ ▶ を押す → onChange(shiftMonth(month, ±1))", "MonthSelector.tsx"],
+      ["browser", "setMonth(新しい月) / setEditing(null)", "Dashboard.tsx handleMonthChange"],
+      ["browser", "month が変わったので useEffect が再実行。前回分は ignore = true で捨てる", "Dashboard.tsx"],
+      ["browser", "GET /api/transactions?month=… と GET /api/summary?month=… を同時に送る", "api-client.ts"],
+      ["server", "month の形式をチェック（NG なら 400）", "route.ts / summary/route.ts"],
+      ["db", "SELECT … WHERE date の範囲 / SUM … GROUP BY", "transactions + categories"],
+      ["server", "JSON で返す（200）", "route.ts"],
+      ["browser", "setTransactions / setSummary → 再描画", "Dashboard.tsx"],
+    ] },
+};
+
+// ------------------------------------------------------------
+// 状態と保存
+// ------------------------------------------------------------
+const LOCAL_KEY = "kakeibo-learning-progress";
+const DRAFT_KEY = "kakeibo-learning-drafts";
+let state = { course: "B", days: {}, attempts: {}, goals: { A: {}, B: {} } };
+let ui = { view: "today", unit: "M1", flow: "add", test: null, graded: false, marks: [], file: "package.json", q: "", mode: "explain" };
+let db = null, docRef = null, canWrite = true, saveTimer = null, saving = Promise.resolve();
+
+function loadLocal() {
+  try { const raw = localStorage.getItem(LOCAL_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+  return null;
+}
+function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch (e) {} }
+function drafts() { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}"); } catch (e) { return {}; } }
+function setDraft(test, i, v) { try { const d = drafts(); (d[test] ||= {})[i] = v; localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); } catch (e) {} }
+function clearDrafts(test) { try { const d = drafts(); delete d[test]; localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); } catch (e) {} }
+
+function setSaved(text) { const el = document.getElementById("saved-state"); if (el) el.textContent = text; }
+
+function persist() {
+  saveLocal();
+  if (!docRef || !canWrite) { setSaved(docRef ? "" : "この端末のブラウザに保存しています"); return; }
+  setSaved("保存中…");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const body = JSON.parse(JSON.stringify(state));
+    saving = saving.then(() => docRef.set(body))
+      .then(() => setSaved("保存しました"))
+      .catch((e) => {
+        if (e && e.code === "invalid_argument") { canWrite = false; applyReadonly(); }
+        setSaved("保存できませんでした。この端末のブラウザには保存されています");
+      });
+  }, 700);
+}
+
+function normalize(s) {
+  return {
+    course: s && (s.course === "A" || s.course === "B") ? s.course : "B",
+    days: (s && s.days) || {},
+    attempts: (s && s.attempts) || {},
+    goals: { A: (s && s.goals && s.goals.A) || {}, B: (s && s.goals && s.goals.B) || {} },
+  };
+}
+
+async function connect() {
+  if (!window.claude || !window.claude.use) return;
+  try {
+    db = await window.claude.use("db");
+    const user = await window.claude.use("user");
+    if (user) { const can = await user.can("data.write"); if (can === false) { canWrite = false; applyReadonly(); } }
+    if (!db) return;
+    docRef = db.doc("progress/main");
+    docRef.onSnapshot((snap) => {
+      if (snap.metadata.hasPendingWrites) return;
+      if (snap.exists) { state = normalize(snap.data()); saveLocal(); renderAll(); setSaved("保存済み"); }
+      else if (canWrite && hasAnyData(state)) { persist(); }
+    }, () => setSaved("この端末のブラウザに保存しています"));
+  } catch (e) { /* 使えない環境ではブラウザ保存のみ */ }
+}
+function hasAnyData(s) { return Object.keys(s.days).length || Object.keys(s.attempts).length; }
+function applyReadonly() {
+  document.getElementById("readonly-note").hidden = canWrite;
+  document.querySelectorAll("#view-record input, .course button").forEach((el) => { if (el.closest("#view-record")) el.disabled = !canWrite; });
+}
+
+// ------------------------------------------------------------
+// 計算
+// ------------------------------------------------------------
+function parseDate(label) { const m = label.match(/(\d+)\/(\d+)/); return new Date(YEAR, Number(m[1]) - 1, Number(m[2])); }
+function todayDate() { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+function days() { return DATA.days[state.course]; }
+function dayRec(id) { return state.days[id] || {}; }
+function best(testId) {
+  const list = state.attempts[testId] || [];
+  if (!list.length) return null;
+  return list.reduce((b, a) => (a.score > b.score ? a : b));
+}
+function testTotal(id) { return DATA.tests[id].questions.length; }
+function dayTestResult(day) {
+  if (!day.tests.length) return null;
+  let score = 0, total = 0, taken = true;
+  for (const t of day.tests) { const b = best(t); total += testTotal(t); if (b) score += b.score; else taken = false; }
+  return { score, total, taken, pass: taken && score >= Math.ceil(total * 0.8) };
+}
+function dayStatus(day) {
+  const r = dayRec(day.id);
+  const t = dayTestResult(day);
+  const minOk = (r.min || 0) >= PASS_MIN;
+  const delivOk = !!r.deliv;
+  const testOk = !t || t.pass;
+  const started = (r.min || 0) > 0 || r.deliv || (t && t.taken);
+  if (minOk && delivOk && testOk) return "pass";
+  return started ? "partial" : "none";
+}
+function pickToday() {
+  const list = days();
+  const now = todayDate();
+  const exact = list.find((d) => parseDate(d.date).getTime() === now.getTime());
+  if (exact) return { day: exact, mode: "today" };
+  const next = list.find((d) => parseDate(d.date) > now);
+  if (next) return { day: next, mode: "next" };
+  return { day: list[list.length - 1], mode: "done" };
+}
+function totalMinutes() { return days().reduce((s, d) => s + (dayRec(d.id).min || 0), 0); }
+function unitTestsInCourse() {
+  // その日のテストを1回として数える（A は M1＋M2 が1回）
+  return days().filter((d) => d.tests.some((t) => t.startsWith("M")));
+}
+
+// ------------------------------------------------------------
+// 描画
+// ------------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const hanko = (cls = "") => `<span class="hanko ${cls}" aria-label="合格">合格</span>`;
+const WEEKDAY = ["日", "月", "火", "水", "木", "金", "土"];
+
+function renderHeader() {
+  document.querySelectorAll(".tab").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.view === ui.view)));
+  document.querySelectorAll(".course button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.course === state.course)));
+  ["today", "plan", "units", "code", "tests", "record"].forEach((v) => { $("view-" + v).hidden = v !== ui.view; });
+}
+
+function renderToday() {
+  const { day, mode } = pickToday();
+  const d = parseDate(day.date);
+  const label = mode === "today" ? "今日の学習" : mode === "next" ? "次の学習日" : "最終日";
+  const status = dayStatus(day);
+  const testBtns = day.tests.map((t) => `<button class="btn ghost" data-go-test="${t}">${esc(DATA.tests[t].title)} を受ける</button>`).join("");
+  const remaining = days().filter((x) => parseDate(x.date) >= todayDate()).length;
+  $("today-card").innerHTML = `
+    <div class="today-date">
+      <div class="datebox"><div class="m">${d.getMonth() + 1}月 ${WEEKDAY[d.getDay()]}曜</div><div class="d">${d.getDate()}</div></div>
+      <div style="flex:1;min-width:0">
+        <div class="eyebrow">${label} ・ ${esc(day.id)}</div>
+        <h1>${unitLabel(day)}</h1>
+      </div>
+      ${status === "pass" ? hanko() : ""}
+    </div>
+    <dl class="kv">
+      <dt>やること</dt><dd>${day.todo}</dd>
+      <dt>成果物</dt><dd>${day.deliv}<div class="muted" style="font-size:0.8rem;margin-top:4px">保存先：<code>学習/成果物/</code></div></dd>
+      <dt>テスト</dt><dd>${day.test}</dd>
+    </dl>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="eyebrow">3時間の使い方</div>
+      <div class="timebar">${TIME_SPLIT.map((t) => `<div style="flex:${t.min};background:${t.color}">${t.label}</div>`).join("")}</div>
+      <div class="timebar-legend">${TIME_SPLIT.map((t, i) => { const start = TIME_SPLIT.slice(0, i).reduce((s, x) => s + x.min, 0); return `<span>${fmtClock(start)}〜 ${t.min}分</span>`; }).join("")}</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${testBtns}<button class="btn ghost" data-go="record">記録をつける</button></div>`;
+
+  const total = totalMinutes();
+  const goalMin = days().length * PASS_MIN;
+  const passedDays = days().filter((x) => dayStatus(x) === "pass").length;
+  const unitDays = unitTestsInCourse();
+  const unitPassed = unitDays.filter((x) => { const r = dayTestResult({ tests: x.tests.filter((t) => t.startsWith("M")) }); return r && r.pass; }).length;
+  const delivDone = days().filter((x) => dayRec(x.id).deliv).length;
+  $("today-stats").innerHTML = `
+    <div class="eyebrow">コース ${state.course} の進み具合</div>
+    ${meter("合格した日", passedDays, days().length, "日")}
+    ${meter("学習時間", total, goalMin, "分")}
+    ${meter("単元テストの合格", unitPassed, unitDays.length, "回")}
+    ${meter("成果物", delivDone, days().length, "件")}
+    <p class="muted" style="margin:0;font-size:0.85rem">ゴール（${esc(days()[days().length - 1].date)}）まで、学習日はあと <b style="font-family:var(--font-mono);color:var(--ink)">${remaining}</b> 日</p>`;
+
+  const now = todayDate().getTime();
+  $("stampgrid").innerHTML = days().map((x) => {
+    const st = dayStatus(x);
+    const isToday = parseDate(x.date).getTime() === now;
+    const past = parseDate(x.date).getTime() < now;
+    const fail = past && st !== "pass";
+    return `<button class="cell ${isToday ? "is-today" : ""} ${fail ? "is-fail" : ""}" data-open-day="${x.id}" aria-label="${x.id} ${esc(x.date)}">
+      <span class="cid">${x.id}</span><span class="cdate">${esc(x.date.replace(/\(.\)/, ""))}</span><span class="cunit">${stripTags(x.unit)}</span>
+      ${st === "pass" ? hanko("small") : fail ? '<span class="fail">未達</span>' : ""}</button>`;
+  }).join("");
+}
+/** "M1" や "M1＋M2" を、単元名つきの表示にする */
+function unitLabel(day) {
+  return day.unit.replace(/M(\d)(?![\d])/g, (m) => {
+    const mod = DATA.modules.find((x) => x.id === m);
+    return mod ? `${m} ${esc(mod.title)}` : m;
+  });
+}
+function fmtClock(min) { return `${Math.floor(min / 60)}:${String(min % 60).padStart(2, "0")}`; }
+function stripTags(html) { const d = document.createElement("div"); d.innerHTML = html; return esc(d.textContent); }
+function meter(label, value, max, unit) {
+  const pct = max ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  return `<div class="meter"><div class="meter-top"><span>${label}</span><span><b>${value.toLocaleString()}</b> / ${max.toLocaleString()} ${unit}</span></div><div class="track"><div style="width:${pct}%"></div></div></div>`;
+}
+
+function renderPlan() {
+  const list = days();
+  const hours = list.length * 3;
+  $("plan-title").textContent = state.course === "A" ? "Aコース：10月末まで" : "Bコース：11月末まで";
+  $("plan-sub").textContent = `${list[0].date} 〜 ${list[list.length - 1].date} ・ ${list.length}日 ・ ${hours}時間`;
+  const weeks = [];
+  for (const d of list) {
+    const dt = parseDate(d.date);
+    const monday = new Date(dt); monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+    const key = monday.getTime();
+    let w = weeks.find((x) => x.key === key);
+    if (!w) { w = { key, monday, days: [] }; weeks.push(w); }
+    w.days.push(d);
+  }
+  const now = todayDate().getTime();
+  $("plan-weeks").innerHTML = weeks.map((w, i) => {
+    const fri = new Date(w.monday); fri.setDate(w.monday.getDate() + 4);
+    return `<div class="week"><h3>第${i + 1}週 ・ ${w.monday.getMonth() + 1}/${w.monday.getDate()} 〜 ${fri.getMonth() + 1}/${fri.getDate()}</h3>
+      ${w.days.map((d) => {
+        const st = dayStatus(d);
+        const open = parseDate(d.date).getTime() === now ? "open" : "";
+        return `<details class="day" id="day-${d.id}" ${open}>
+          <summary><span class="sid">${d.id}</span><span class="sdate">${esc(d.date)}</span><span class="sunit">${unitLabel(d)}</span>
+          ${st === "pass" ? hanko("small") : d.tests.length ? `<span class="tag test">テスト</span>` : `<span class="tag">学習</span>`}</summary>
+          <div class="day-body"><div><h4>やること</h4>${d.todo}</div><div><h4>成果物と合格条件</h4>${d.deliv}</div><div><h4>テスト</h4>${d.test}</div></div>
+        </details>`;
+      }).join("")}</div>`;
+  }).join("");
+  $("flow-checklist").innerHTML = DATA.flowChecklist.map((x) => `<li>${x}</li>`).join("");
+  $("kaishu-conditions").innerHTML = DATA.kaishuConditions.map((x) => `<li>${x}</li>`).join("");
+}
+
+function renderUnits() {
+  $("unit-chips").innerHTML = DATA.modules.map((m) => `<button class="chip" data-unit="${m.id}" aria-pressed="${m.id === ui.unit}">${m.id} ${esc(m.title)}</button>`).join("");
+  const u = UNITS[ui.unit];
+  const mod = DATA.modules.find((m) => m.id === ui.unit);
+  $("zones").innerHTML = ZONES.map((z) => `<div class="zone ${z.id} ${u.zones.includes(z.id) ? "" : "dim"}">
+      <h3>${z.name}</h3><div class="runs">${z.runs}</div>
+      <div class="files">${z.files.map((f) => `<code class="${u.hot.includes(f) ? "hot" : ""}">${esc(f)}</code>`).join("")}</div></div>`).join("");
+  $("unit-detail").innerHTML = `
+    <div class="concepts">${u.concepts.map((c) => `<div class="concept"><h3>${esc(c.t)}</h3><div>${esc(c.d)}</div><pre>${esc(c.code)}</pre><div class="where">${esc(c.where)}</div></div>`).join("")}</div>
+    <div class="unit-meta">
+      <div class="sheet"><div class="eyebrow">読むコード</div><p style="margin:6px 0 0">${mod.files}</p></div>
+      <div class="sheet"><div class="eyebrow">教材（無料）</div><p style="margin:6px 0 0">${mod.materials}</p></div>
+    </div>`;
+
+  $("flow-chips").innerHTML = Object.entries(FLOWS).map(([k, f]) => `<button class="chip" data-flow="${k}" aria-pressed="${k === ui.flow}">${f.name}</button>`).join("");
+  const f = FLOWS[ui.flow];
+  $("flow-desc").textContent = f.desc;
+  const head = `<div></div>${ZONES.map((z) => `<div class="lane-head ${z.id}">${z.name.replace("（Next.js）", "")}</div>`).join("")}`;
+  const rows = f.steps.map(([zone, text, file], i) => `<div class="lane-n">${i + 1}</div>${ZONES.map((z) => `<div class="lane-c">${z.id === zone ? `<div class="step ${zone}">${esc(text)}<span class="file">${esc(file)}</span></div>` : ""}</div>`).join("")}`).join("");
+  $("lane-grid").innerHTML = head + rows;
+}
+
+function testOrder() { return ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "S1"].concat(state.course === "B" ? ["S2"] : []); }
+function renderTests() {
+  if (!ui.test || !testOrder().includes(ui.test)) ui.test = testOrder()[0];
+  const id = ui.test, t = DATA.tests[id];
+  $("test-chips").innerHTML = testOrder().map((x) => { const b = best(x); const pass = b && b.score >= Math.ceil(testTotal(x) * 0.8);
+    return `<button class="chip" data-test="${x}" aria-pressed="${x === id}">${esc(DATA.tests[x].title.replace(/：.*/, ""))}${pass ? " ✓" : ""}</button>`; }).join("");
+  $("test-title").textContent = t.title;
+  const list = state.attempts[id] || [];
+  $("test-history").innerHTML = list.length ? `<span class="muted">これまでの結果：</span>` + list.map((a, i) => `<span>${i + 1}回目 <b style="font-family:var(--font-mono)">${a.score}/${a.total}</b> <span class="muted">(${esc(a.at)})</span></span>`).join("") : `<span class="muted">まだ受けていません。合格ラインは ${Math.ceil(t.questions.length * 0.8)}/${t.questions.length} 問です。</span>`;
+  const dr = drafts()[id] || {};
+  $("qlist").innerHTML = t.questions.map((q, i) => {
+    const a = t.answers[i];
+    const m = ui.marks[i];
+    return `<div class="q"><div class="qn">${i + 1}</div><div class="qt">${q.hands ? '<span class="hands">実行して確かめる</span>' : ""}${q.q}</div>
+      <textarea id="ans-${id}-${i}" data-draft="${i}" aria-label="問${i + 1}の答え" placeholder="答えを書く">${esc(dr[i] || "")}</textarea>
+      ${ui.graded ? `<div class="ans"><dl><dt>解答</dt><dd>${a.a}</dd><dt>採点基準</dt><dd>${a.c}</dd>${a.ref ? `<dt>該当</dt><dd>${a.ref}</dd>` : ""}</dl>
+        <div class="mark"><button class="ok" data-mark="${i}" data-v="1" aria-pressed="${m === true}" aria-label="正解">○</button><button class="ng" data-mark="${i}" data-v="0" aria-pressed="${m === false}" aria-label="不正解">×</button></div></div>` : ""}
+    </div>`;
+  }).join("");
+  const total = t.questions.length, need = Math.ceil(total * 0.8);
+  const score = ui.marks.filter((x) => x === true).length;
+  const marked = ui.marks.filter((x) => x === true || x === false).length;
+  $("scorebar").innerHTML = !ui.graded
+    ? `<span class="muted" style="flex:1">すべて答えたら、解答を開いて自分で○×をつけます。</span><button class="btn" data-grade>採点する</button>`
+    : `<span class="score">${score}/${total}</span>
+       <span class="muted" style="flex:1">${marked < total ? `残り ${total - marked} 問の○×をつけてください` : score >= need ? "合格です" : `合格まであと ${need - score} 問。間違えた問題の「該当」のコードを読み直しましょう`}</span>
+       ${marked === total && score >= need ? hanko("small stamp-in") : ""}
+       <button class="btn ghost" data-reset>やり直す</button>
+       <button class="btn" data-save-attempt ${marked < total || !canWrite ? "disabled" : ""}>結果を記録する</button>`;
+}
+
+function renderRecord() {
+  const list = days();
+  $("record-title").textContent = `学習記録（コース ${state.course}）`;
+  const rows = list.map((d) => {
+    const r = dayRec(d.id), t = dayTestResult(d), st = dayStatus(d);
+    const testCell = !t ? `<span class="muted">―</span>` : t.taken ? `${t.score}/${t.total}` : `<button class="btn ghost" style="padding:2px 10px;font-size:0.8rem" data-go-test="${d.tests[0]}">受ける</button>`;
+    return `<tr>
+      <td style="font-family:var(--font-mono);color:var(--ink-soft)">${d.id}</td>
+      <td style="white-space:nowrap">${esc(d.date)}</td>
+      <td style="min-width:9em">${unitLabel(d)}</td>
+      <td class="num"><input type="number" min="0" max="600" step="10" id="min-${d.id}" data-min="${d.id}" value="${r.min ?? ""}" aria-label="${d.id} の学習時間（分）"></td>
+      <td style="text-align:center"><input type="checkbox" id="deliv-${d.id}" data-deliv="${d.id}" ${r.deliv ? "checked" : ""} aria-label="${d.id} の成果物"></td>
+      <td class="num">${testCell}</td>
+      <td style="text-align:center">${st === "pass" ? hanko("small") : st === "partial" ? '<span class="judge-x">未達</span>' : ""}</td>
+      <td><input type="text" id="memo-${d.id}" data-memo="${d.id}" value="${esc(r.memo || "")}" placeholder="分からなかったこと" aria-label="${d.id} のメモ"></td></tr>`;
+  }).join("");
+  const total = totalMinutes(), goalMin = list.length * PASS_MIN;
+  $("rec-table").innerHTML = `<thead><tr><th>日</th><th>日付</th><th>内容</th><th class="num">時間(分)</th><th style="text-align:center">成果物</th><th class="num">テスト</th><th style="text-align:center">判定</th><th>メモ</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="3">合計</td><td class="num">${total.toLocaleString()} / ${goalMin.toLocaleString()}</td><td style="text-align:center">${list.filter((d) => dayRec(d.id).deliv).length}/${list.length}</td><td></td><td style="text-align:center">${list.filter((d) => dayStatus(d) === "pass").length}/${list.length}</td><td class="muted" style="font-weight:400;font-size:0.8rem">判定：150分以上・成果物○・テスト80%以上</td></tr></tfoot>`;
+  renderGoals();
+  applyReadonly();
+}
+
+function renderGoals() {
+  const c = state.course, g = state.goals[c], list = days();
+  const unitDays = unitTestsInCourse();
+  const unitPassed = unitDays.filter((x) => { const r = dayTestResult({ tests: x.tests.filter((t) => t.startsWith("M")) }); return r && r.pass; }).length;
+  const s1 = best("S1"), s2 = best("S2");
+  const firstHalf = c === "B" ? list.slice(0, 16) : list;
+  const delivDone = firstHalf.filter((d) => dayRec(d.id).deliv).length;
+  const goalMin = list.length * PASS_MIN;
+  const items = [
+    { t: "学習時間の合計", v: `${totalMinutes().toLocaleString()} / ${goalMin.toLocaleString()} 分`, ok: totalMinutes() >= goalMin },
+    { t: c === "A" ? "単元テスト 6回すべて合格" : "単元テスト M1〜M7 すべて 8/10 以上", v: `${unitPassed} / ${unitDays.length}`, ok: unitPassed === unitDays.length },
+    { t: "総合テストⅠ 16/20 以上", v: s1 ? `${s1.score}/20` : "未受験", ok: !!s1 && s1.score >= 16 },
+    { t: c === "A" ? "成果物 7ファイルすべて合格" : "前半の成果物 16ファイルすべて合格", v: `${delivDone} / ${firstHalf.length}`, ok: delivDone === firstHalf.length },
+    { t: "実技テスト：8ステップ以上・誤り1個以下", input: "check", key: "jitsugi1" },
+  ];
+  if (c === "B") items.push(
+    { t: "総合テストⅡ 16/20 以上", v: s2 ? `${s2.score}/20` : "未受験", ok: !!s2 && s2.score >= 16 },
+    { t: "改修課題 5本がすべて合格条件を満たす", input: "num", key: "kaishu", max: 5, need: 5, unit: "本" },
+    { t: "レビュー演習で仕込みバグを 4/5 以上発見", input: "num", key: "review", max: 5, need: 4, unit: "個" },
+    { t: "Git のコミット 10件以上（git log --oneline の行数）", input: "num", key: "commits", max: 999, need: 10, unit: "件" },
+    { t: "最終の実技テスト：チェックリスト 9項目以上", input: "num", key: "jitsugi2", max: 10, need: 9, unit: "項目" },
+  );
+  let okCount = 0;
+  $("goals").innerHTML = items.map((it, i) => {
+    let value = it.v, ok = it.ok;
+    if (it.input === "check") { ok = !!g[it.key]; value = `<input type="checkbox" id="goal-${c}-${it.key}" data-goal="${it.key}" ${ok ? "checked" : ""} aria-label="${esc(it.t)}">`; }
+    if (it.input === "num") { const n = Number(g[it.key] || 0); ok = n >= it.need; value = `<input type="number" min="0" max="${it.max}" id="goal-${c}-${it.key}" data-goal-num="${it.key}" value="${g[it.key] ?? ""}" aria-label="${esc(it.t)}"> ${it.unit}`; }
+    if (ok) okCount++;
+    return `<div class="goal"><span class="gn">${i + 1}</span><span>${esc(it.t)}</span><span class="gv">${value}</span>${ok ? hanko("small") : '<span class="pending" aria-label="未達"></span>'}</div>`;
+  }).join("");
+  $("goal-title").textContent = `最終判定（${list[list.length - 1].date}）`;
+  $("goal-sub").innerHTML = `<b style="font-family:var(--font-mono);color:var(--ink)">${okCount}/${items.length}</b> 項目達成 ${okCount === items.length ? "・ コース達成です" : ""}`;
+}
+
+// ------------------------------------------------------------
+// コード
+// ------------------------------------------------------------
+const ZONE_NAME = { browser: "ブラウザで動く", server: "Node.js サーバーで動く", db: "PostgreSQL で動く", both: "ブラウザ・サーバー両方", config: "設定ファイル" };
+const baseName = (p) => p.split("/").pop();
+function fileByPath(p) { return DATA.code.find((f) => f.path === p); }
+/** "Dashboard.tsx" や "lib/format.ts" のような短い書き方から、ファイルを1つに決める */
+function resolveFile(text) {
+  const t = text.trim();
+  if (!/\.(tsx?|mjs|css|sql|json|example)$/.test(t)) return null;
+  const hits = DATA.code.filter((f) => f.path === t || f.path === "src/" + t || f.path.endsWith("/" + t));
+  return hits.length === 1 ? hits[0].path : null;
+}
+function linkifyCodes() {
+  document.querySelectorAll("main code").forEach((el) => {
+    // テストの問題文はリンクにしない（採点の途中で画面が切り替わらないように）
+    if (el.closest("pre") || el.closest("#qlist") || el.dataset.file) return;
+    const p = resolveFile(el.textContent);
+    if (p) { el.dataset.file = p; el.classList.add("filelink"); el.title = "コードを開く"; el.tabIndex = 0; }
+  });
+}
+function lineHits(f, q) {
+  if (!q) return [];
+  const out = [];
+  f.code.split("\n").forEach((l, i) => { if (l.toLowerCase().includes(q)) out.push(i + 1); });
+  return out;
+}
+function highlightText(text, lang) {
+  try { if (window.hljs) return window.hljs.highlight(text, { language: lang, ignoreIllegals: true }).value; } catch (e) {}
+  return esc(text);
+}
+function highlight(f) { return highlightText(f.code, f.lang); }
+
+/** 作る順番に並べた「読む順」のリスト。ファイルのない手順（完成の確認）も1項目として入れる */
+const ORDER = [];
+DATA.steps.forEach((s, si) => {
+  if (!s.files.length) ORDER.push({ si, key: "step:" + si, label: s.title });
+  else s.files.forEach((f) => ORDER.push({ si, key: f.path, label: baseName(f.path), wf: f }));
+});
+function currentEntry() {
+  return ORDER.find((o) => o.key === ui.file) || ORDER.find((o) => o.si === Number(String(ui.file).replace("step:", ""))) || ORDER[0];
+}
+function gutterHtml(from, to, hitSet) {
+  let out = "";
+  for (let n = from; n <= to; n++) out += `<span data-ln="${n}" class="${hitSet.has(n) ? "hit" : ""}">${n}</span>`;
+  return out;
+}
+
+function renderCode() {
+  const q = (ui.q || "").trim().toLowerCase();
+  const entry = currentEntry();
+  ui.file = entry.key;
+  const totalLines = DATA.code.reduce((s, f) => s + f.code.replace(/\n$/, "").split("\n").length, 0);
+  $("code-sub").textContent = `全${DATA.steps.length}ステップ・${DATA.code.length}ファイル・${totalLines.toLocaleString()}行`;
+  $("zone-legend").innerHTML = Object.entries(ZONE_NAME).map(([z, n]) => `<span><i class="zdot ${z}"></i>${n.replace("で動く", "")}</span>`).join("");
+
+  // 左：手順とファイルの一覧
+  $("file-groups").innerHTML = DATA.steps.map((s, si) => {
+    const items = s.files.map((wf) => { const f = fileByPath(wf.path); return { f, hits: lineHits(f, q).length }; }).filter((x) => !q || x.hits);
+    if (q && !items.length) return "";
+    const stepKey = "step:" + si;
+    return `<div class="fgroup"><h3><button data-file="${s.files.length ? esc(s.files[0].path) : stepKey}" aria-current="${entry.si === si}"><span class="snum">${String(si + 1).padStart(2, "0")}</span>${esc(s.title)}</button></h3>
+      ${items.length ? `<ul>${items.map(({ f, hits }) => `<li><button class="fbtn" data-file="${esc(f.path)}" title="${esc(f.path)}" aria-current="${f.path === ui.file}"><i class="zdot ${f.zone}"></i>${esc(baseName(f.path))}${hits ? `<span class="hits">${hits}</span>` : ""}</button></li>`).join("")}</ul>` : ""}</div>`;
+  }).join("") || `<p class="muted" style="margin:0;font-size:0.85rem">「${esc(ui.q)}」を含むファイルはありません。</p>`;
+  $("file-pick").innerHTML = DATA.steps.map((s, si) => `<optgroup label="${String(si + 1).padStart(2, "0")} ${esc(s.title)}">${
+    (s.files.length ? s.files.map((wf) => ({ key: wf.path, label: wf.path })) : [{ key: "step:" + si, label: s.title }])
+      .map((o) => `<option value="${esc(o.key)}" ${o.key === ui.file ? "selected" : ""}>${esc(o.label)}</option>`).join("")}</optgroup>`).join("");
+
+  // 右：手順の説明
+  const step = DATA.steps[entry.si];
+  const idx = ORDER.indexOf(entry);
+  const stepCard = `
+    <section class="sheet stepcard">
+      <div class="stitle"><span class="snum">STEP ${String(entry.si + 1).padStart(2, "0")} / ${DATA.steps.length}</span><h3>${esc(step.title)}</h3></div>
+      <dl>
+        <dt>ゴール</dt><dd>${step.goal}</dd>
+        ${step.commands.length ? `<dt>コマンド</dt><dd>${step.commands.map((c) => `<div class="cmd">${esc(c)}</div>`).join("")}</dd>` : ""}
+        <dt>確認方法</dt><dd>${step.check}</dd>
+        ${step.files.length ? `<dt>作るファイル</dt><dd><div class="stepfiles rel">${step.files.map((wf) => `<button data-file="${esc(wf.path)}" ${wf.path === ui.file ? 'style="border-color:var(--accent);color:var(--accent)"' : ""}>${esc(baseName(wf.path))}</button>`).join("")}</div></dd>` : ""}
+      </dl>
+    </section>`;
+
+  let body = "";
+  if (entry.wf) {
+    const wf = entry.wf;
+    const f = fileByPath(wf.path);
+    const lines = f.code.replace(/\n$/, "").split("\n");
+    const hits = lineHits(f, q);
+    const hitSet = new Set(hits);
+    const relBtns = (list) => list.map((p) => `<button data-file="${esc(p)}">${esc(baseName(p))}</button>`).join("");
+    const head = `
+      <div class="sheet filehead">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+          <div class="fpath">${esc(f.path)}</div>
+          <div class="modes" role="group" aria-label="表示の切り替え">
+            <button data-mode="explain" aria-pressed="${ui.mode !== "full"}">解説つき</button>
+            <button data-mode="full" aria-pressed="${ui.mode === "full"}">全文</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="zbadge ${f.zone}"><i class="zdot ${f.zone}"></i>${ZONE_NAME[f.zone]}</span><span class="muted">${lines.length}行${q ? ` ・ 「${esc(ui.q)}」は ${hits.length} 行` : ""}</span></div>
+        ${f.uses.length ? `<div class="rel"><b>このファイルが使っている</b>${relBtns(f.uses)}</div>` : ""}
+        ${f.usedBy.length ? `<div class="rel"><b>このファイルを使っている</b>${relBtns(f.usedBy)}</div>` : ""}
+      </div>`;
+    if (ui.mode === "full") {
+      body = head + `
+        <div class="codebox">
+          <div class="codebar">
+            <span>${esc(f.role)}</span>
+            ${hits.length ? `<span class="hitlist">${hits.slice(0, 40).map((n) => `<button data-file="${esc(f.path)}" data-line="${n}">${n}行</button>`).join("")}</span>` : ""}
+            <button class="btn ghost" style="padding:3px 12px;font-size:0.78rem" data-copy>コピー</button>
+          </div>
+          <div class="codegrid">
+            <pre class="gutter" aria-hidden="true">${gutterHtml(1, lines.length, hitSet)}</pre>
+            <pre class="src"><code id="src-code">${highlight(f)}</code></pre>
+          </div>
+        </div>`;
+    } else {
+      body = head + `<p class="intro">${wf.intro}</p>
+        <div class="blocks">${wf.blocks.map((b) => {
+          const chunk = lines.slice(b.start - 1, b.end).join("\n");
+          return `<div class="blk">
+            <div class="codegrid">
+              <pre class="gutter" aria-hidden="true">${gutterHtml(b.start, b.end, hitSet)}</pre>
+              <pre class="src"><code>${highlightText(chunk, f.lang)}</code></pre>
+            </div>
+            <div class="exp">
+              <span class="lines">${b.start === b.end ? `${b.start}行目` : `${b.start}〜${b.end}行目`}</span>
+              <h4>${b.title}</h4>
+              ${b.text ? `<p>${b.text}</p>` : ""}
+            </div>
+          </div>`;
+        }).join("")}</div>`;
+    }
+  }
+
+  const prev = ORDER[idx - 1], next = ORDER[idx + 1];
+  const pager = `<div class="pager">
+      ${prev ? `<button data-file="${esc(prev.key)}"><small>← 前へ（STEP ${String(prev.si + 1).padStart(2, "0")}）</small><b>${esc(prev.label)}</b></button>` : ""}
+      ${next ? `<button class="next" data-file="${esc(next.key)}"><small>次へ（STEP ${String(next.si + 1).padStart(2, "0")}）→</small><b>${esc(next.label)}</b></button>` : ""}
+    </div>
+    <p class="progress" style="margin:0;text-align:center">${idx + 1} / ${ORDER.length}</p>`;
+
+  $("fileview").innerHTML = stepCard + body + pager;
+}
+
+function openFile(p, line) {
+  const changed = p !== ui.file;
+  ui.file = p;
+  try { localStorage.setItem("kakeibo-learning-file", p); } catch (e) {}
+  if (ui.view !== "code") go("code"); else renderCode();
+  if (line) {
+    const el = document.querySelector(`.gutter span[data-ln="${line}"]`);
+    if (el) el.scrollIntoView({ block: "center" });
+  } else if (changed) {
+    const head = $("fileview");
+    if (head) head.scrollIntoView({ block: "start" });
+  }
+}
+
+function renderAll() {
+  renderHeader();
+  if (ui.view === "today") renderToday();
+  if (ui.view === "plan") renderPlan();
+  if (ui.view === "units") renderUnits();
+  if (ui.view === "code") renderCode();
+  if (ui.view === "tests") renderTests();
+  if (ui.view === "record") renderRecord();
+  linkifyCodes();
+}
+
+// ------------------------------------------------------------
+// 操作
+// ------------------------------------------------------------
+function go(view, hashOk = true) {
+  ui.view = view;
+  if (hashOk) { try { history.replaceState(null, "", "#" + view); } catch (e) {} }
+  renderAll();
+  window.scrollTo({ top: 0 });
+}
+function openTest(id) { ui.test = id; ui.graded = false; ui.marks = []; go("tests"); }
+
+document.addEventListener("click", (e) => {
+  queueMicrotask(linkifyCodes); // 部分的に描き直した画面にもリンクを付ける
+  const fileEl = e.target.closest("[data-file]");
+  if (fileEl) { openFile(fileEl.dataset.file, Number(fileEl.dataset.line) || 0); return; }
+  const modeEl = e.target.closest("[data-mode]");
+  if (modeEl) { ui.mode = modeEl.dataset.mode; try { localStorage.setItem("kakeibo-learning-mode", ui.mode); } catch (err) {} renderCode(); return; }
+  if (e.target.closest("[data-copy]")) {
+    const text = fileByPath(ui.file).code;
+    const btn = e.target.closest("[data-copy]");
+    const done = () => { btn.textContent = "コピーしました"; setTimeout(() => { btn.textContent = "コピー"; }, 1500); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents($("src-code")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "選択しました（Ctrl+C でコピー）"; };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+    return;
+  }
+  const el = e.target.closest("button, [data-open-day]");
+  if (!el) return;
+  if (el.dataset.view) go(el.dataset.view);
+  else if (el.dataset.course) { state.course = el.dataset.course; ui.test = null; ui.graded = false; ui.marks = []; persist(); renderAll(); }
+  else if (el.dataset.go) go(el.dataset.go);
+  else if (el.dataset.goTest) openTest(el.dataset.goTest);
+  else if (el.dataset.openDay) { go("plan"); const d = $("day-" + el.dataset.openDay); if (d) { d.open = true; d.scrollIntoView({ block: "center" }); } }
+  else if (el.dataset.unit) { ui.unit = el.dataset.unit; renderUnits(); }
+  else if (el.dataset.flow) { ui.flow = el.dataset.flow; renderUnits(); }
+  else if (el.dataset.test) { ui.test = el.dataset.test; ui.graded = false; ui.marks = []; renderTests(); }
+  else if (el.hasAttribute("data-grade")) { ui.graded = true; ui.marks = []; renderTests(); }
+  else if (el.dataset.mark) { ui.marks[Number(el.dataset.mark)] = el.dataset.v === "1"; const y = window.scrollY; renderTests(); window.scrollTo({ top: y }); }
+  else if (el.hasAttribute("data-reset")) { ui.graded = false; ui.marks = []; clearDrafts(ui.test); renderTests(); window.scrollTo({ top: 0 }); }
+  else if (el.hasAttribute("data-save-attempt")) {
+    const t = DATA.tests[ui.test];
+    const n = new Date();
+    const at = `${n.getMonth() + 1}/${n.getDate()} ${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}`;
+    (state.attempts[ui.test] ||= []).push({ at, score: ui.marks.filter((x) => x === true).length, total: t.questions.length });
+    persist(); ui.graded = false; ui.marks = []; clearDrafts(ui.test); renderTests(); window.scrollTo({ top: 0 });
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.matches && e.target.matches("code.filelink")) openFile(e.target.dataset.file, 0);
+});
+document.addEventListener("input", (e) => {
+  const el = e.target;
+  if (el.id === "code-search") { ui.q = el.value; renderCode(); return; }
+  if (el.dataset.draft !== undefined) { setDraft(ui.test, el.dataset.draft, el.value); return; }
+  if (el.dataset.memo) { (state.days[el.dataset.memo] ||= {}).memo = el.value; persist(); }
+});
+document.addEventListener("change", (e) => {
+  const el = e.target;
+  if (el.id === "file-pick") { openFile(el.value, 0); return; }
+  if (el.dataset.min) { const v = el.value === "" ? undefined : Math.max(0, Math.min(600, Number(el.value))); (state.days[el.dataset.min] ||= {}).min = v; persist(); renderRecord(); }
+  else if (el.dataset.deliv) { (state.days[el.dataset.deliv] ||= {}).deliv = el.checked; persist(); renderRecord(); }
+  else if (el.dataset.goal) { state.goals[state.course][el.dataset.goal] = el.checked; persist(); renderGoals(); }
+  else if (el.dataset.goalNum) { state.goals[state.course][el.dataset.goalNum] = el.value === "" ? undefined : Number(el.value); persist(); renderGoals(); }
+});
+
+// ------------------------------------------------------------
+// 起動
+// ------------------------------------------------------------
+const saved = loadLocal();
+if (saved) state = normalize(saved);
+const VIEWS = ["today", "plan", "units", "code", "tests", "record"];
+try { const f = localStorage.getItem("kakeibo-learning-file"); if (f) ui.file = f; } catch (e) {}
+try { if (localStorage.getItem("kakeibo-learning-mode") === "full") ui.mode = "full"; } catch (e) {}
+const h = location.hash.replace("#", "");
+if (VIEWS.includes(h)) ui.view = h;
+renderAll();
+setSaved("この端末のブラウザに保存しています");
+connect();
+</script>

@@ -1,0 +1,36 @@
+/* CSS Modules: ここで書いたクラス名は、このコンポーネントの中だけで有効になる */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 左: フォーム + グラフ、右: 一覧 の2列レイアウト */
+.columns {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.error {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--expense-bg);
+  color: var(--expense);
+}
+
+/* 画面幅が 860px 以下（スマホ・タブレット）では1列にする */
+@media (max-width: 860px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
