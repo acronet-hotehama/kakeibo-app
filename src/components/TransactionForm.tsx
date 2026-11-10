@@ -131,11 +131,9 @@ export default function TransactionForm({ categories, editing, defaultDate, onSu
       {error && <p className={styles.error}>{error}</p>}
 
       <div className={styles.actions}>
-        {editing && (
           <button type="button" className="button button-secondary" onClick={onCancelEdit}>
             キャンセル
           </button>
-        )}
         <button type="submit" className="button" disabled={submitting}>
           {submitting ? "保存中…" : editing ? "更新する" : "追加する"}
         </button>
