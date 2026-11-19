@@ -48,7 +48,7 @@ export async function findTransactionsByMonth(month: string): Promise<Transactio
 }
 
 /** 1件取得。見つからなければ null */
-async function findTransactionById(id: number): Promise<Transaction | null> {
+export async function findTransactionById(id: number): Promise<Transaction | null> {
   const result = await pool.query<Transaction>(
     `SELECT ${TRANSACTION_COLUMNS}
        FROM transactions t
